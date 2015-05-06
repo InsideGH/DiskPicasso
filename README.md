@@ -13,7 +13,6 @@ Using the original source path with additional
 parameters such as desired with, height and bitmap
 config, the cache can be queried to check if 
 cached version exists or not.
-<<<<<<< HEAD
 
 Example of usage would be like ->
 
