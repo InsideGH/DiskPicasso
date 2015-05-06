@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Bitmap;
 
-import com.peter100.home.pablopicasso.JournalEntry;
+import com.peter100.home.pablopicasso.CacheEntry;
 import com.peter100.home.pablopicasso.journal.Journal;
 
 import java.io.File;
@@ -87,7 +87,7 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
     }
 
     @Override
-    public void insert(JournalEntry entry) {
+    public void insert(CacheEntry entry) {
         if (!exists(entry.getIdentity())) {
             SQLiteDatabase db = getWritableDatabase();
             db.beginTransaction();
@@ -119,7 +119,7 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
     }
 
     @Override
-    public void remove(JournalEntry entry) {
+    public void remove(CacheEntry entry) {
         SQLiteDatabase db = getWritableDatabase();
         String where = SqlJournalContract.EntryTable.COLUMN_NAME_IDENTITY + EQ + entry
                 .getIdentity();
@@ -134,8 +134,8 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
     }
 
     @Override
-    public JournalEntry[] retrieveAll() {
-        JournalEntry[] entries = null;
+    public CacheEntry[] retrieveAll() {
+        CacheEntry[] entries = null;
         SQLiteDatabase db = getReadableDatabase();
         try {
             db.beginTransaction();
@@ -144,7 +144,7 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
                             NULL_ARGS, NULL_GROUP_BY, NULL_HAVING, SORT_OLDEST_FIRST);
             if (cursor != null && cursor.moveToFirst()) {
                 int count = cursor.getCount();
-                entries = new JournalEntry[count];
+                entries = new CacheEntry[count];
                 for (int i = 0; i < count; i++) {
                     String sourceFilePath = cursor.getString(cursor.getColumnIndex(
                             SqlJournalContract.EntryTable.COLUMN_NAME_FILE_ABS_PATH));
@@ -158,7 +158,7 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
                             SqlJournalContract.EntryTable.COLUMN_NAME_BITMAP_CONFIG)));
                     int byteSize = cursor.getInt(cursor
                             .getColumnIndex(SqlJournalContract.EntryTable.COLUMN_NAME_BITMAP_SIZE));
-                    entries[i] = new JournalEntry(sourceFilePath, cacheFile, width, height, config,
+                    entries[i] = new CacheEntry(sourceFilePath, cacheFile, width, height, config,
                             byteSize);
                     cursor.moveToNext();
                 }

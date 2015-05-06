@@ -3,18 +3,20 @@ package com.peter100.home.pablopicasso.storage;
 import android.content.Context;
 import android.graphics.Bitmap;
 
-import com.peter100.home.pablopicasso.JournalEntry;
+import com.peter100.home.pablopicasso.CacheEntry;
 import com.peter100.home.pablopicasso.filesystem.FileSystem;
+import com.peter100.home.pablopicasso.filesystem.WriteRequest;
 import com.peter100.home.pablopicasso.journal.Journal;
 
+import java.io.File;
+
 /**
- * Storage supporting file and journal write, read and remove operation.
+ * Storage handling file and journal write, read and remove operation.
  */
 public class Storage {
     private static final Bitmap.CompressFormat COMPRESS_FORMAT = Bitmap.CompressFormat.JPEG;
-    private final StorageWriter mStorageWriter;
-    private final StorageRemover mStorageRemover;
-    private final JournalFetcher mJournalFetcher;
+    private final FileSystem mFileSystem;
+    private final Journal mJournal;
 
     /**
      * Constructor.
@@ -24,21 +26,24 @@ public class Storage {
      * @param compressQuality Bitmap compress quality.
      */
     public Storage(Context context, Journal journal, int compressQuality) {
-        FileSystem fileSystem = new FileSystem(context, compressQuality, COMPRESS_FORMAT);
-        mStorageWriter = new StorageWriter(journal, fileSystem);
-        mStorageRemover = new StorageRemover(journal, fileSystem);
-        mJournalFetcher = new JournalFetcher(journal);
+        mJournal = journal;
+        mFileSystem = new FileSystem(context, compressQuality, COMPRESS_FORMAT);
     }
 
     /**
      * Write to storage.
      *
-     * @param filePath Original image path.
-     * @param bitmap   Bitmap to write.
+     * @param req
      * @return Entry of the result or null if fail.
      */
-    public synchronized JournalEntry write(String filePath, Bitmap bitmap) {
-        return mStorageWriter.write(filePath, bitmap);
+    public synchronized CacheEntry write(WriteRequest req) {
+        File cacheFile = mFileSystem.write(req);
+        if (cacheFile != null) {
+            CacheEntry entry = createCacheEntry(req, cacheFile);
+            mJournal.insert(entry);
+            return entry;
+        }
+        return null;
     }
 
     /**
@@ -46,8 +51,9 @@ public class Storage {
      *
      * @param entry Entry to remove.
      */
-    public synchronized void remove(JournalEntry entry) {
-        mStorageRemover.remove(entry);
+    public synchronized void remove(CacheEntry entry) {
+        mFileSystem.remove(entry);
+        mJournal.remove(entry);
     }
 
     /**
@@ -55,7 +61,20 @@ public class Storage {
      *
      * @return
      */
-    public synchronized JournalEntry[] fetchAll() {
-        return mJournalFetcher.fetchAll();
+    public synchronized CacheEntry[] fetchAll() {
+        return mJournal.retrieveAll();
+    }
+
+    /**
+     * Create a cache entry.
+     *
+     * @param req
+     * @param cacheFile
+     * @return
+     */
+    private CacheEntry createCacheEntry(WriteRequest req, File cacheFile) {
+        Bitmap bitmap = req.getBitmap();
+        String path = req.getPath();
+        return new CacheEntry(path, cacheFile, bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig(), (int) cacheFile.length());
     }
 }

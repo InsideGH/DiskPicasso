@@ -3,8 +3,8 @@ package com.peter100.home.pablopicasso.journal.realm;
 import android.content.Context;
 import android.graphics.Bitmap;
 
+import com.peter100.home.pablopicasso.CacheEntry;
 import com.peter100.home.pablopicasso.journal.Journal;
-import com.peter100.home.pablopicasso.JournalEntry;
 
 import java.io.File;
 
@@ -29,7 +29,7 @@ public class RealmJournal implements Journal {
     }
 
     @Override
-    public void insert(JournalEntry entry) {
+    public void insert(CacheEntry entry) {
         if (!exists(entry.getIdentity())) {
             Realm realm = Realm.getInstance(mContext);
             realm.beginTransaction();
@@ -49,7 +49,7 @@ public class RealmJournal implements Journal {
     }
 
     @Override
-    public void remove(JournalEntry entry) {
+    public void remove(CacheEntry entry) {
         Realm realm = Realm.getInstance(mContext);
         realm.beginTransaction();
 
@@ -69,16 +69,16 @@ public class RealmJournal implements Journal {
     }
 
     @Override
-    public JournalEntry[] retrieveAll() {
+    public CacheEntry[] retrieveAll() {
         Realm realm = Realm.getInstance(mContext);
 
         RealmResults<RealmEntry> realmEntries = realm.allObjects(RealmEntry.class);
         int size = realmEntries.size();
-        JournalEntry[] result = new JournalEntry[size];
+        CacheEntry[] result = new CacheEntry[size];
 
         for (int i = 0; i < size; i++) {
             RealmEntry pabloEntry = realmEntries.get(i);
-            result[i] = new JournalEntry(pabloEntry.getSourceFilePath(), new File(pabloEntry.getCacheFile()), pabloEntry.getWidth(), pabloEntry.getHeight(), createConfig(pabloEntry.getBitmapConfig()), pabloEntry.getByteSize());
+            result[i] = new CacheEntry(pabloEntry.getSourceFilePath(), new File(pabloEntry.getCacheFile()), pabloEntry.getWidth(), pabloEntry.getHeight(), createConfig(pabloEntry.getBitmapConfig()), pabloEntry.getByteSize());
         }
 
         realm.close();

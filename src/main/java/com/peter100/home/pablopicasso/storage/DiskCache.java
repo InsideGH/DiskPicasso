@@ -4,8 +4,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.LruCache;
 
-import com.peter100.home.pablopicasso.JournalEntry;
+import com.peter100.home.pablopicasso.CacheEntry;
 import com.peter100.home.pablopicasso.executor.CacheExecutor;
+import com.peter100.home.pablopicasso.filesystem.WriteRequest;
 import com.peter100.home.pablopicasso.journal.Journal;
 import com.peter100.home.pablopicasso.journal.realm.RealmJournal;
 
@@ -107,7 +108,7 @@ public class DiskCache {
             public void run() {
                 File fromCache = get(filePath, bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig());
                 if (fromCache == null) {
-                    JournalEntry entry = mStorage.write(filePath, bitmap);
+                    CacheEntry entry = mStorage.write(new WriteRequest(filePath, bitmap));
                     if (entry != null) {
                         synchronized (mDiskReflection) {
                             mDiskReflection.put(entry.getIdentity(), entry);
@@ -128,8 +129,8 @@ public class DiskCache {
      * @return A file referencing the cached image or null if no match.
      */
     public File get(String originalPath, int cachedWidth, int cachedHeight, Bitmap.Config cachedConfig) {
-        JournalEntry entry;
-        long identity = JournalEntry.calcIdentity(originalPath, cachedWidth, cachedHeight, cachedConfig);
+        CacheEntry entry;
+        long identity = CacheEntry.calcIdentity(originalPath, cachedWidth, cachedHeight, cachedConfig);
         synchronized (mDiskReflection) {
             entry = mDiskReflection.get(identity);
         }
@@ -140,10 +141,10 @@ public class DiskCache {
      * Initialize the disk cache memory reflection from persisted storage.
      */
     /*package*/ void init() {
-        JournalEntry[] entries = mStorage.fetchAll();
+        CacheEntry[] entries = mStorage.fetchAll();
         if (entries != null) {
             synchronized (mDiskReflection) {
-                for (JournalEntry e : entries) {
+                for (CacheEntry e : entries) {
                     mDiskReflection.put(e.getIdentity(), e);
                 }
             }
@@ -153,19 +154,19 @@ public class DiskCache {
     /**
      * This is a memory reflection of the disk cache and a disk size limiter.
      */
-    private class DiskReflection extends LruCache<Long, JournalEntry> {
+    private class DiskReflection extends LruCache<Long, CacheEntry> {
         public DiskReflection(int maxSize) {
             super(maxSize);
         }
 
         @Override
-        protected int sizeOf(Long key, JournalEntry entry) {
+        protected int sizeOf(Long key, CacheEntry entry) {
             return entry.getByteSize();
         }
 
         @Override
-        protected void entryRemoved(boolean evicted, Long key, final JournalEntry old,
-                                    JournalEntry prev) {
+        protected void entryRemoved(boolean evicted, Long key, final CacheEntry old,
+                                    CacheEntry prev) {
             mExecutor.execute(new Runnable() {
                 @Override
                 public void run() {

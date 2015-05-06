@@ -8,7 +8,7 @@ import java.io.File;
  * Journal entry. Each entry is unique, identified by a unique identity.
  * Immutable DAO.
  */
-public class JournalEntry {
+public class CacheEntry {
     private static final long IDENTITY_MULTIPLIER = 31L;
     private final int mWidth;
     private final int mHeight;
@@ -41,7 +41,7 @@ public class JournalEntry {
      * @param cachedConfig   The bitmap config of cached image.
      * @param cachedByteSize The byte size of the cached image.
      */
-    public JournalEntry(String originalPath, File cacheFile, int cachedWidth, int cachedHeight, Bitmap.Config cachedConfig, int cachedByteSize) {
+    public CacheEntry(String originalPath, File cacheFile, int cachedWidth, int cachedHeight, Bitmap.Config cachedConfig, int cachedByteSize) {
         mSourceFilePath = originalPath;
         mFile = cacheFile;
         mWidth = cachedWidth;

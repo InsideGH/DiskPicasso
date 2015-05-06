@@ -3,7 +3,7 @@ package com.peter100.home.pablopicasso.filesystem;
 import android.content.Context;
 import android.graphics.Bitmap;
 
-import com.peter100.home.pablopicasso.JournalEntry;
+import com.peter100.home.pablopicasso.CacheEntry;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -35,22 +35,20 @@ public class FileSystem {
     /**
      * Create a new file and write bitmap into it.
      *
-     * @param sourceFilePath Original image source path.
-     * @param bitmap         Bitmap to write.
+     * @param req
      * @return Journal entry of the result or null if fail.
      */
-    public JournalEntry write(String sourceFilePath, Bitmap bitmap) {
+    public File write(WriteRequest req) {
         File cacheFile = null;
+        String path = req.getPath();
+        Bitmap bitmap = req.getBitmap();
         try {
-            cacheFile = createImageFile(sourceFilePath, bitmap, mCompressFormat, mQuality);
+            cacheFile = createImageFile(path, bitmap, mCompressFormat, mQuality);
         } catch (IOException e) {
             e.printStackTrace();
         }
         if (cacheFile != null) {
-            int width = bitmap.getWidth();
-            int height = bitmap.getHeight();
-            Bitmap.Config config = bitmap.getConfig();
-            return new JournalEntry(sourceFilePath, cacheFile, width, height, config, (int) cacheFile.length());
+            return cacheFile;
         }
         return null;
     }
@@ -60,7 +58,7 @@ public class FileSystem {
      *
      * @param entry
      */
-    public void remove(JournalEntry entry) {
+    public void remove(CacheEntry entry) {
         File file = entry.getCacheFile();
         file.delete();
     }
@@ -75,7 +73,7 @@ public class FileSystem {
      * @return The image file containing compressed bitmap.
      */
     private File createImageFile(String filePath, Bitmap src, Bitmap.CompressFormat format, int quality) throws IOException {
-        long identity = JournalEntry.calcIdentity(filePath, src.getWidth(), src.getHeight(), src.getConfig());
+        long identity = CacheEntry.calcIdentity(filePath, src.getWidth(), src.getHeight(), src.getConfig());
         File file = createFile(filePath + identity);
         writeFile(file, src, format, quality);
         return file;
