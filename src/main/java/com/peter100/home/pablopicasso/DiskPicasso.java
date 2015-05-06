@@ -59,7 +59,7 @@ public class DiskPicasso {
      *
      * @return
      */
-    public synchronized static DiskPicasso getDiskPicasso() {
+    public synchronized static DiskPicasso getInstance() {
         return sDiskPicassoInstance;
     }
 
@@ -90,7 +90,7 @@ public class DiskPicasso {
      * @param config   Bitmap config to use.
      * @return Request creator with a post disk cache write.
      */
-    public RequestCreator getLoaderWithCacheWrite(String filePath, Config config) {
+    public RequestCreator getLoader(String filePath, Config config) {
         RequestCreator loader = SinglePicasso.getPicasso().load(new File(filePath)).config(config);
         if (sIsInitialized) {
             CacheTransformation writeTransform = new CacheTransformation(filePath);
@@ -108,7 +108,7 @@ public class DiskPicasso {
      * @param transformation Client custom transformation.
      * @return Request creator with a post disk cache write.
      */
-    public RequestCreator getLoaderWithCacheWrite(String filePath, Config config, CacheTransformation transformation) {
+    public RequestCreator getLoader(String filePath, Config config, CacheTransformation transformation) {
         RequestCreator loader = SinglePicasso.getPicasso().load(new File(filePath)).config(config);
         if (sIsInitialized) {
             transformation.enableDiskWrite(mDiskCache);
