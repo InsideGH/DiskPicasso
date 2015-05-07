@@ -9,6 +9,11 @@ import com.peter100.home.pablopicasso.filesystem.WriteRequest;
 import com.peter100.home.pablopicasso.journal.Journal;
 
 import java.io.File;
+import java.io.IOException;
+
+import rx.Observable;
+import rx.Observable.OnSubscribe;
+import rx.Subscriber;
 
 /**
  * Storage handling file and journal write, read and remove operation.
@@ -17,6 +22,7 @@ public class Storage {
     private static final Bitmap.CompressFormat COMPRESS_FORMAT = Bitmap.CompressFormat.JPEG;
     private final FileSystem mFileSystem;
     private final Journal mJournal;
+    private final Object mGuard = new Object();
 
     /**
      * Constructor.
@@ -30,20 +36,23 @@ public class Storage {
         mFileSystem = new FileSystem(context, compressQuality, COMPRESS_FORMAT);
     }
 
-    /**
-     * Write to storage.
-     *
-     * @param req
-     * @return Entry of the result or null if fail.
-     */
-    public synchronized CacheEntry write(WriteRequest req) {
-        File cacheFile = mFileSystem.write(req);
-        if (cacheFile != null) {
-            CacheEntry entry = createCacheEntry(req, cacheFile);
-            mJournal.insert(entry);
-            return entry;
-        }
-        return null;
+    public Observable<CacheEntry> write(final WriteRequest req) {
+        return Observable.create(new OnSubscribe<CacheEntry>() {
+            @Override
+            public void call(Subscriber<? super CacheEntry> subscriber) {
+                try {
+                    CacheEntry entry;
+                    synchronized (mGuard) {
+                        File cacheFile = mFileSystem.write(req);
+                        entry = createCacheEntry(req, cacheFile);
+                        mJournal.insert(entry);
+                    }
+                    subscriber.onNext(entry);
+                } catch (IOException e) {
+                    subscriber.onError(e);
+                }
+            }
+        });
     }
 
     /**
@@ -51,9 +60,11 @@ public class Storage {
      *
      * @param entry Entry to remove.
      */
-    public synchronized void remove(CacheEntry entry) {
-        mFileSystem.remove(entry);
-        mJournal.remove(entry);
+    public void remove(CacheEntry entry) {
+        synchronized (mGuard) {
+            mFileSystem.remove(entry);
+            mJournal.remove(entry);
+        }
     }
 
     /**
@@ -61,8 +72,10 @@ public class Storage {
      *
      * @return
      */
-    public synchronized CacheEntry[] fetchAll() {
-        return mJournal.retrieveAll();
+    public CacheEntry[] fetchAll() {
+        synchronized (mGuard) {
+            return mJournal.retrieveAll();
+        }
     }
 
     /**
@@ -75,6 +88,7 @@ public class Storage {
     private CacheEntry createCacheEntry(WriteRequest req, File cacheFile) {
         Bitmap bitmap = req.getBitmap();
         String path = req.getPath();
-        return new CacheEntry(path, cacheFile, bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig(), (int) cacheFile.length());
+        return new CacheEntry(path, cacheFile, bitmap.getWidth(), bitmap.getHeight(),
+                bitmap.getConfig(), (int)cacheFile.length());
     }
 }

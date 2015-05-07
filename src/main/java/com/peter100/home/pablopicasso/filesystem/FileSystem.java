@@ -7,7 +7,6 @@ import com.peter100.home.pablopicasso.CacheEntry;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -38,19 +37,10 @@ public class FileSystem {
      * @param req
      * @return Journal entry of the result or null if fail.
      */
-    public File write(WriteRequest req) {
-        File cacheFile = null;
+    public File write(WriteRequest req) throws IOException {
         String path = req.getPath();
         Bitmap bitmap = req.getBitmap();
-        try {
-            cacheFile = createImageFile(path, bitmap, mCompressFormat, mQuality);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (cacheFile != null) {
-            return cacheFile;
-        }
-        return null;
+        return createImageFile(path, bitmap, mCompressFormat, mQuality);
     }
 
     /**
@@ -72,15 +62,18 @@ public class FileSystem {
      * @param quality  Bitmap compress quality.
      * @return The image file containing compressed bitmap.
      */
-    private File createImageFile(String filePath, Bitmap src, Bitmap.CompressFormat format, int quality) throws IOException {
-        long identity = CacheEntry.calcIdentity(filePath, src.getWidth(), src.getHeight(), src.getConfig());
+    private File createImageFile(String filePath, Bitmap src, Bitmap.CompressFormat format,
+                                 int quality) throws IOException {
+        long identity = CacheEntry
+                .calcIdentity(filePath, src.getWidth(), src.getHeight(), src.getConfig());
         File file = createFile(filePath + identity);
         writeFile(file, src, format, quality);
         return file;
     }
 
     /**
-     * Create file. Any directory tree structure will be created if needed. Exception is thrown if fail.
+     * Create file. Any directory tree structure will be created if needed. Exception is thrown
+     * if fail.
      *
      * @param filePath Path including any directories.
      * @return The file.
@@ -105,18 +98,15 @@ public class FileSystem {
      * @param format  Bitmap compress format.
      * @param quality Bitmap compress quality.
      */
-    private void writeFile(File file, Bitmap src, Bitmap.CompressFormat format, int quality) throws FileNotFoundException {
+    private void writeFile(File file, Bitmap src, Bitmap.CompressFormat format,
+                           int quality) throws IOException {
         BufferedOutputStream stream = null;
         try {
             stream = new BufferedOutputStream(new FileOutputStream(file));
             src.compress(format, quality, stream);
         } finally {
             if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                stream.close();
             }
         }
     }

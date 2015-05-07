@@ -11,6 +11,10 @@ import com.peter100.home.pablopicasso.journal.Journal;
 import com.peter100.home.pablopicasso.journal.realm.RealmJournal;
 
 import java.io.File;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 /**
  * Disk cache using local application data storage location and journal of any choice.
@@ -18,7 +22,7 @@ import java.io.File;
 public class DiskCache {
     private final DiskReflection mDiskReflection;
     private final Storage mStorage;
-    private final CacheExecutor mExecutor;
+    private final ReentrantReadWriteLock mRwLock;
 
     /**
      * Builder to build a uninitialized cache.
@@ -91,9 +95,9 @@ public class DiskCache {
      * @param journal        Journal used for persistence.
      */
     private DiskCache(Context context, int diskCacheBytes, Journal journal, int compressQuality) {
-        mExecutor = new CacheExecutor.Builder().build();
         mStorage = new Storage(context, journal, compressQuality);
         mDiskReflection = new DiskReflection(diskCacheBytes);
+        mRwLock = new ReentrantReadWriteLock(true);
     }
 
     /**
@@ -102,21 +106,21 @@ public class DiskCache {
      * @param filePath The path to the original image.
      * @param bitmap   Bitmap to write/compress to disk cache.
      */
-    public void put(final String filePath, final Bitmap bitmap) {
-        mExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                File fromCache = get(filePath, bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig());
-                if (fromCache == null) {
-                    CacheEntry entry = mStorage.write(new WriteRequest(filePath, bitmap));
-                    if (entry != null) {
-                        synchronized (mDiskReflection) {
-                            mDiskReflection.put(entry.getIdentity(), entry);
+    public void put(final String filePath, Bitmap bitmap) {
+        if (null == get(filePath, bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig())) {
+            mStorage.write(new WriteRequest(filePath, bitmap)).subscribeOn(Schedulers.io())
+                    .subscribe(new Action1<CacheEntry>() {
+                        @Override
+                        public void call(CacheEntry entry) {
+                            mRwLock.writeLock().lock();
+                            try {
+                                mDiskReflection.put(entry.getIdentity(), entry);
+                            } finally {
+                                mRwLock.writeLock().unlock();
+                            }
                         }
-                    }
-                }
-            }
-        });
+                    });
+        }
     }
 
     /**
@@ -128,13 +132,18 @@ public class DiskCache {
      * @param cachedConfig The bitmap config of the cached image.
      * @return A file referencing the cached image or null if no match.
      */
-    public File get(String originalPath, int cachedWidth, int cachedHeight, Bitmap.Config cachedConfig) {
+    public File get(String originalPath, int cachedWidth, int cachedHeight,
+                    Bitmap.Config cachedConfig) {
         CacheEntry entry;
-        long identity = CacheEntry.calcIdentity(originalPath, cachedWidth, cachedHeight, cachedConfig);
-        synchronized (mDiskReflection) {
+        long identity = CacheEntry
+                .calcIdentity(originalPath, cachedWidth, cachedHeight, cachedConfig);
+        mRwLock.readLock().lock();
+        try {
             entry = mDiskReflection.get(identity);
+            return entry != null ? entry.getCacheFile() : null;
+        } finally {
+            mRwLock.readLock().unlock();
         }
-        return entry != null ? entry.getCacheFile() : null;
     }
 
     /**
@@ -143,10 +152,13 @@ public class DiskCache {
     /*package*/ void init() {
         CacheEntry[] entries = mStorage.fetchAll();
         if (entries != null) {
-            synchronized (mDiskReflection) {
+            mRwLock.writeLock().lock();
+            try {
                 for (CacheEntry e : entries) {
                     mDiskReflection.put(e.getIdentity(), e);
                 }
+            } finally {
+                mRwLock.writeLock().unlock();
             }
         }
     }
@@ -155,8 +167,11 @@ public class DiskCache {
      * This is a memory reflection of the disk cache and a disk size limiter.
      */
     private class DiskReflection extends LruCache<Long, CacheEntry> {
+        private final CacheExecutor mExecutor;
+
         public DiskReflection(int maxSize) {
             super(maxSize);
+            mExecutor = new CacheExecutor.Builder().setMax(2).build();
         }
 
         @Override
