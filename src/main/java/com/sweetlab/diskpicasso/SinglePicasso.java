@@ -1,8 +1,7 @@
-package com.peter100.home.pablopicasso;
+package com.sweetlab.diskpicasso;
 
 import android.content.Context;
 
-import com.peter100.home.pablopicasso.executor.CacheExecutor;
 import com.squareup.picasso.LruCache;
 import com.squareup.picasso.Picasso;
 
@@ -24,7 +23,6 @@ public class SinglePicasso {
     public synchronized static void init(Context context, int memoryCacheSizeBytes, boolean indicatorEnabled, boolean loggingEnabled) {
         if (sPicassoInstance == null) {
             Picasso.Builder builder = new Picasso.Builder(context);
-            builder.executor(new CacheExecutor.Builder().build());
             builder.memoryCache(new LruCache(memoryCacheSizeBytes));
             sPicassoInstance = builder.build();
             sPicassoInstance.setIndicatorsEnabled(indicatorEnabled);
@@ -35,7 +33,7 @@ public class SinglePicasso {
     /**
      * Get picasso instance. Make sure that init has been called.
      *
-     * @return
+     * @return The single instance
      */
     public synchronized static Picasso getPicasso() {
         return sPicassoInstance;

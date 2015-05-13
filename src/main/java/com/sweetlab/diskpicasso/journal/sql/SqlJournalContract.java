@@ -1,4 +1,4 @@
-package com.peter100.home.pablopicasso.journal.sql;
+package com.sweetlab.diskpicasso.journal.sql;
 
 /**
  * Contract against sql database.

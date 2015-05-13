@@ -1,4 +1,4 @@
-package com.peter100.home.pablopicasso.executor;
+package com.sweetlab.diskpicasso.executor;
 
 import java.util.Collection;
 import java.util.List;

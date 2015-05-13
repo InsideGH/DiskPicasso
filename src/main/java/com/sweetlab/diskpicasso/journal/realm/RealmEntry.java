@@ -1,4 +1,4 @@
-package com.peter100.home.pablopicasso.journal.realm;
+package com.sweetlab.diskpicasso.journal.realm;
 
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;

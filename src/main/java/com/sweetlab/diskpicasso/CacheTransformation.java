@@ -1,9 +1,9 @@
-package com.peter100.home.pablopicasso;
+package com.sweetlab.diskpicasso;
 
 import android.graphics.Bitmap;
 
-import com.peter100.home.pablopicasso.storage.DiskCache;
 import com.squareup.picasso.Transformation;
+import com.sweetlab.diskpicasso.storage.DiskCache;
 
 /**
  * This is a disk cache write transformation. If client extend this transform they must call super.transform(Bitmap source) to ensure that cache writing happens.

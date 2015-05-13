@@ -1,4 +1,4 @@
-package com.peter100.home.pablopicasso.journal.sql;
+package com.sweetlab.diskpicasso.journal.sql;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,8 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Bitmap;
 
-import com.peter100.home.pablopicasso.CacheEntry;
-import com.peter100.home.pablopicasso.journal.Journal;
+import com.sweetlab.diskpicasso.CacheEntry;
+import com.sweetlab.diskpicasso.journal.Journal;
 
 import java.io.File;
 
@@ -51,7 +51,7 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
     /**
      * Private constructor, singleton.
      *
-     * @param context
+     * @param context Android application context.
      */
     private SqlJournal(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -61,7 +61,7 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
      * Get the instance.
      *
      * @param context Android application context preferably.
-     * @return
+     * @return The journal.
      */
     public synchronized static SqlJournal getInstance(Context context) {
         if (sInstance == null) {
@@ -137,9 +137,10 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
     public CacheEntry[] retrieveAll() {
         CacheEntry[] entries = null;
         SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = null;
         try {
             db.beginTransaction();
-            Cursor cursor = db
+            cursor = db
                     .query(SqlJournalContract.EntryTable.TABLE_NAME, ENTRY_COLUMNS, NULL_SELECTION,
                             NULL_ARGS, NULL_GROUP_BY, NULL_HAVING, SORT_OLDEST_FIRST);
             if (cursor != null && cursor.moveToFirst()) {
@@ -167,6 +168,9 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
         } finally {
             db.endTransaction();
             db.close();
+            if (cursor != null) {
+                cursor.close();
+            }
         }
         return entries;
     }
@@ -175,11 +179,12 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
     public boolean exists(long identity) {
         boolean exists = false;
         SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = null;
         try {
             db.beginTransaction();
             String IDENTITY_SELECTION = SqlJournalContract.EntryTable.COLUMN_NAME_IDENTITY + EQ + identity;
 
-            Cursor cursor = db
+            cursor = db
                     .query(SqlJournalContract.EntryTable.TABLE_NAME, IDENTITY_COLUMN, IDENTITY_SELECTION,
                             NULL_ARGS, NULL_GROUP_BY, NULL_HAVING, SORT_OLDEST_FIRST);
             if (cursor != null && cursor.moveToFirst()) {
@@ -196,6 +201,9 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
         } finally {
             db.endTransaction();
             db.close();
+            if (cursor != null) {
+                cursor.close();
+            }
         }
         return exists;
     }

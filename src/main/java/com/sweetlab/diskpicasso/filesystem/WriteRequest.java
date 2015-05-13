@@ -1,4 +1,4 @@
-package com.peter100.home.pablopicasso.filesystem;
+package com.sweetlab.diskpicasso.filesystem;
 
 import android.graphics.Bitmap;
 

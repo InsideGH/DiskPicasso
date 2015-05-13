@@ -1,9 +1,9 @@
-package com.peter100.home.pablopicasso.filesystem;
+package com.sweetlab.diskpicasso.filesystem;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 
-import com.peter100.home.pablopicasso.CacheEntry;
+import com.sweetlab.diskpicasso.CacheEntry;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -34,7 +34,7 @@ public class FileSystem {
     /**
      * Create a new file and write bitmap into it.
      *
-     * @param req
+     * @param req Write request.
      * @return Journal entry of the result or null if fail.
      */
     public File write(WriteRequest req) throws IOException {
@@ -46,11 +46,12 @@ public class FileSystem {
     /**
      * Remove/delete a file based on journal entry information.
      *
-     * @param entry
+     * @param entry Entry to remove.
+     * @return True if success.
      */
-    public void remove(CacheEntry entry) {
+    public boolean remove(CacheEntry entry) {
         File file = entry.getCacheFile();
-        file.delete();
+        return file.delete();
     }
 
     /**

@@ -1,10 +1,10 @@
-package com.peter100.home.pablopicasso.journal.realm;
+package com.sweetlab.diskpicasso.journal.realm;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 
-import com.peter100.home.pablopicasso.CacheEntry;
-import com.peter100.home.pablopicasso.journal.Journal;
+import com.sweetlab.diskpicasso.CacheEntry;
+import com.sweetlab.diskpicasso.journal.Journal;
 
 import java.io.File;
 
@@ -22,7 +22,7 @@ public class RealmJournal implements Journal {
     /**
      * Constructor.
      *
-     * @param context
+     * @param context Android application context.
      */
     public RealmJournal(Context context) {
         mContext = context;

@@ -1,4 +1,4 @@
-package com.peter100.home.pablopicasso.storage;
+package com.sweetlab.diskpicasso.storage;
 
 /**
  * Enforce client to take decision how to initialize the cache.
@@ -9,7 +9,7 @@ public class UnInitializedCache {
     /**
      * Hold uninitialized cache.
      *
-     * @param cache
+     * @param cache The uninitialized cache.
      */
     public UnInitializedCache(DiskCache cache) {
         mCache = cache;
@@ -18,7 +18,7 @@ public class UnInitializedCache {
     /**
      * Get the uninitialized cache.
      *
-     * @return
+     * @return The uninitialized cache.
      */
     public DiskCache get() {
         return mCache;

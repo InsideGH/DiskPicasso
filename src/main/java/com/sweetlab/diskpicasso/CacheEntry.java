@@ -1,4 +1,4 @@
-package com.peter100.home.pablopicasso;
+package com.sweetlab.diskpicasso;
 
 import android.graphics.Bitmap;
 
@@ -17,6 +17,7 @@ public class CacheEntry {
     private final int mByteSize;
     private final long mIdentity;
     private final String mSourceFilePath;
+    private boolean mIsLandscape;
 
     /**
      * Helper method to calculate unique identity given parameters.
@@ -49,12 +50,13 @@ public class CacheEntry {
         mConfig = cachedConfig;
         mByteSize = cachedByteSize;
         mIdentity = calcIdentity(originalPath, cachedWidth, cachedHeight, cachedConfig);
+        mIsLandscape = mWidth >= mHeight;
     }
 
     /**
      * The original image path.
      *
-     * @return
+     * @return The path to the original image file.
      */
     public String getOriginalFilePath() {
         return mSourceFilePath;
@@ -63,7 +65,7 @@ public class CacheEntry {
     /**
      * Get a file representing the cache file.
      *
-     * @return
+     * @return The cache file.
      */
     public File getCacheFile() {
         return mFile;
@@ -72,7 +74,7 @@ public class CacheEntry {
     /**
      * Get the cache image width.
      *
-     * @return
+     * @return The cache image width.
      */
     public int getWidth() {
         return mWidth;
@@ -81,7 +83,7 @@ public class CacheEntry {
     /**
      * Get the cached image height.
      *
-     * @return
+     * @return The cache image height.
      */
     public int getHeight() {
         return mHeight;
@@ -90,7 +92,7 @@ public class CacheEntry {
     /**
      * Get the cached bitmap config.
      *
-     * @return
+     * @return THe cache bitmap config.
      */
     public Bitmap.Config getConfig() {
         return mConfig;
@@ -99,7 +101,7 @@ public class CacheEntry {
     /**
      * Get the cached image byte size.
      *
-     * @return
+     * @return The cache bitmap size.
      */
     public int getByteSize() {
         return mByteSize;
@@ -108,9 +110,23 @@ public class CacheEntry {
     /**
      * Get the identity if this cached entry.
      *
-     * @return
+     * @return The identity for this cache entry.
      */
     public long getIdentity() {
         return mIdentity;
+    }
+
+    /**
+     * Get if the cached dimensions are landscape. Equal width and height return true as well.
+     *
+     * @return True if so.
+     */
+    public boolean isLandscape() {
+        return mIsLandscape;
+    }
+
+    @Override
+    public String toString() {
+        return mSourceFilePath + " w = " + getWidth() + " h = " + getHeight() + " config = " + getConfig();
     }
 }
