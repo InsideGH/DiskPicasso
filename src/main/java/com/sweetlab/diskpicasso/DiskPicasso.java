@@ -93,18 +93,18 @@ public class DiskPicasso {
     }
 
     /**
-     * Get a picasso request creator for a cached image with config initialized.
+     * Get a loader for a cached file.
      *
-     * @param filePath File path to original image.
-     * @param width    Cached image width.
-     * @param height   Cached image height.
-     * @param config   Cached bitmap config.
+     * @param fileKey Source file key.
+     * @param width   Cached image width.
+     * @param height  Cached image height.
+     * @param config  Cached bitmap config.
      * @return Request creator or null if not in cache.
      */
-    public RequestCreator getCachedLoader(String filePath, int width, int height, Config config) {
+    public RequestCreator loadUsingCache(String fileKey, int width, int height, Config config) {
         if (width != 0 && height != 0 && sIsInitialized) {
             Picasso instance = SinglePicasso.getPicasso();
-            File cacheFile = mDiskCache.getExact(filePath, width, height, config);
+            File cacheFile = mDiskCache.getExact(fileKey, width, height, config);
             if (cacheFile != null) {
                 return instance.load(cacheFile).config(config);
             }
@@ -115,14 +115,15 @@ public class DiskPicasso {
     /**
      * Get a picasso request creator with a post disk cache write using picasso transformation.
      *
-     * @param filePath File path to original image.
-     * @param config   Bitmap config to use.
+     * @param sourcePath Source file path to original image.
+     * @param fileKey    Source file key.
+     * @param config     Bitmap config to use.
      * @return Request creator with a post disk cache write.
      */
-    public RequestCreator loadWithCacheWrite(String filePath, Config config) {
-        RequestCreator loader = SinglePicasso.getPicasso().load(new File(filePath)).config(config);
+    public RequestCreator loadAndWrite(String sourcePath, String fileKey, Config config) {
+        RequestCreator loader = SinglePicasso.getPicasso().load(new File(sourcePath)).config(config);
         if (sIsInitialized) {
-            CacheTransformation writeTransform = new CacheTransformation(filePath);
+            CacheTransformation writeTransform = new CacheTransformation(fileKey);
             writeTransform.enableDiskWrite(mDiskCache);
             loader.transform(writeTransform);
         }
@@ -130,31 +131,14 @@ public class DiskPicasso {
     }
 
     /**
-     * Get a picasso request creator with a custom transformation.
+     * Get a list of cache entries given the provided source file key.
      *
-     * @param filePath       File path to original image.
-     * @param config         Bitmap config to use.
-     * @param transformation Client custom transformation.
-     * @return Request creator with a post disk cache write.
+     * @param fileKey The source file key.
+     * @return A unmodifiable list of entries or empty list.
      */
-    public RequestCreator loadWithCacheWrite(String filePath, Config config, CacheTransformation transformation) {
-        RequestCreator loader = SinglePicasso.getPicasso().load(new File(filePath)).config(config);
+    public List<CacheEntry> getFromCache(String fileKey) {
         if (sIsInitialized) {
-            transformation.enableDiskWrite(mDiskCache);
-            loader.transform(transformation);
-        }
-        return loader;
-    }
-
-    /**
-     * Get a list of cache entries given the provided source path.
-     *
-     * @param originalPath The original source path.
-     * @return A unmodifiable list of entries.
-     */
-    public List<CacheEntry> getCacheEntries(String originalPath) {
-        if (sIsInitialized) {
-            return mDiskCache.get(originalPath);
+            return mDiskCache.get(fileKey);
         }
         return Collections.emptyList();
     }

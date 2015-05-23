@@ -9,16 +9,16 @@ import com.sweetlab.diskpicasso.storage.DiskCache;
  * This is a disk cache write transformation. If client extend this transform they must call super.transform(Bitmap source) to ensure that cache writing happens.
  */
 public class CacheTransformation implements Transformation {
-    private final String mFilePath;
+    private final String mFileKey;
     private DiskCache mDiskCache;
 
     /**
      * Constructor.
      *
-     * @param filePath File path to original image.
+     * @param fileKey Source file key.
      */
-    public CacheTransformation(String filePath) {
-        mFilePath = filePath;
+    public CacheTransformation(String fileKey) {
+        mFileKey = fileKey;
     }
 
     /**
@@ -33,13 +33,13 @@ public class CacheTransformation implements Transformation {
     @Override
     public Bitmap transform(Bitmap source) {
         if (mDiskCache != null) {
-            mDiskCache.put(mFilePath, source);
+            mDiskCache.put(mFileKey, source);
         }
         return source;
     }
 
     @Override
     public String key() {
-        return mFilePath;
+        return mFileKey;
     }
 }

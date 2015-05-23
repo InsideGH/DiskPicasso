@@ -30,17 +30,17 @@ public class RealmJournal implements Journal {
 
     @Override
     public void insert(CacheEntry entry) {
-        if (!exists(entry.getIdentity())) {
+        if (!exists(entry.getPrimaryKey())) {
             Realm realm = Realm.getInstance(mContext);
             realm.beginTransaction();
 
             RealmEntry realmEntry = realm.createObject(RealmEntry.class);
-            realmEntry.setSourceFilePath(entry.getOriginalFilePath());
-            realmEntry.setCacheFile(entry.getCacheFile().getAbsolutePath());
+            realmEntry.setSourceFilePath(entry.getFileKey());
+            realmEntry.setCacheFile(entry.getFile().getAbsolutePath());
             realmEntry.setWidth(entry.getWidth());
             realmEntry.setHeight(entry.getHeight());
             realmEntry.setByteSize(entry.getByteSize());
-            realmEntry.setIdentity(entry.getIdentity());
+            realmEntry.setIdentity(entry.getPrimaryKey());
             realmEntry.setBitmapConfig(entry.getConfig().name());
 
             realm.commitTransaction();
@@ -53,7 +53,7 @@ public class RealmJournal implements Journal {
         Realm realm = Realm.getInstance(mContext);
         realm.beginTransaction();
 
-        RealmResults<RealmEntry> result = realm.where(RealmEntry.class).equalTo(IDENTITY_KEY, entry.getIdentity()).findAll();
+        RealmResults<RealmEntry> result = realm.where(RealmEntry.class).equalTo(IDENTITY_KEY, entry.getPrimaryKey()).findAll();
         if (DEBUG) {
             if (result.size() == 0) {
                 throw new RuntimeException("remove : noting found");

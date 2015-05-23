@@ -35,12 +35,14 @@ Example of usage would be like ->
         final int height = imageView.getMeasuredHeight();
 
         DiskPicasso instance = DiskPicasso.getInstance();
-        RequestCreator cacheLoader = instance.getCachedLoader(photoInfo.getUrl(), width, height, BITMAP_CONFIG);
+        RequestCreator cacheLoader = instance.loadUsingCache(photoInfo.getFileKey(), width, height, BITMAP_CONFIG);
 
         if (cacheLoader != null) {
+            // load the cache file with picasso. 
             cacheLoader.into(imageView);
         } else {
-            instance.loadWithCacheWrite(photoInfo.getUrl(), BITMAP_CONFIG).fit().centerCrop().into(imageView);
+            // load source file with picasso and then do a DiskCache write.
+            instance.loadAndWrite(photo.getSourcePath(), photo.getFileKey(), BITMAP_CONFIG).fit().centerCrop().into(imageView);
         }
     }
 
@@ -59,18 +61,38 @@ Example of usage would be like ->
 
     private void loadPhotoView(final PhotoMeta photo, PhotoViewHolder holder) {
         final AspectImageView imageView = holder.getImageView();
-
         final DiskPicasso instance = DiskPicasso.getInstance();
-        List<CacheEntry> cacheEntries = instance.getCacheEntries(photo.getUrl());
+        
+        // Get all entries for a given source file key.
+        List<CacheEntry> cacheEntries = instance.getFromCache(photo.getFileKey());
 
         final int resizeX = calcPicassoResizeX(photo);
         final int resizeY = calcPicassoResizeY(photo);
         CacheEntry match = DiskPicasso.findMatch(cacheEntries, resizeX, resizeY, JPEG_CONFIG);
         if (match != null) {
-            SinglePicasso.getPicasso().load(match.getCacheFile()).into(imageView);
+	    // load the cache file with picasso.
+            SinglePicasso.getPicasso().load(match.getFile()).into(imageView);
         } else {
-            instance.loadWithCacheWrite(photo.getUrl(), JPEG_CONFIG).resize(resizeX, resizeY).into(imageView);
+            // load source file with picasso and then do a DiskCache write.
+            instance.loadAndWrite(photo.getSourcePath(), photo.getFileKey(), JPEG_CONFIG).resize(resizeX, resizeY).into(imageView);
         }
     }
 
+The file key is upto client to decide upon. Using the _ID column from Android MediaStore is one way
+to add uniqueness to the original source path by merging these together.
+
+Like this ->
+
+    public static PhotoMeta createPhotoMeta(Cursor cursor) {
+        final long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns._ID));
+        final String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATA));
+        final int width = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.WIDTH));
+        final int height = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.HEIGHT));
+        final int orientation = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.ORIENTATION));
+        final long dateTaken = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATE_TAKEN));
+
+        String fileKey = path + "_" + id;
+
+        return new PhotoMeta(path, fileKey, width, height, orientation, dateTaken);
+    }
 

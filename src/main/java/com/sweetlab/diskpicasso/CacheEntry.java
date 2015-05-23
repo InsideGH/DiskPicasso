@@ -5,69 +5,79 @@ import android.graphics.Bitmap;
 import java.io.File;
 
 /**
- * Journal entry. Each entry is unique, identified by a unique identity.
+ * Journal entry. Each entry is unique, identified by two keys.
+ * The file key is the reference to the original source file.
+ * The primary key is based on the file key with additional uniqueness including width, height and config.
+ * <p/>
  * Immutable DAO.
  */
 public class CacheEntry {
     private static final long IDENTITY_MULTIPLIER = 31L;
+    private final String mFileKey;
+    private final long mPrimaryKey;
+    private final File mFile;
     private final int mWidth;
     private final int mHeight;
     private final Bitmap.Config mConfig;
-    private final File mFile;
     private final int mByteSize;
-    private final long mIdentity;
-    private final String mSourceFilePath;
-    private boolean mIsLandscape;
 
     /**
-     * Helper method to calculate unique identity given parameters.
+     * Helper method to calculate unique key given parameters.
      *
-     * @param sourcePath A path.
-     * @param width      A width.
-     * @param height     A height.
-     * @param config     A bitmap config.
+     * @param fileKey A unique source file key.
+     * @param width   A width.
+     * @param height  A height.
+     * @param config  A bitmap config.
      * @return Unique identity.
      */
-    public static long calcIdentity(String sourcePath, int width, int height, Bitmap.Config config) {
-        return sourcePath.hashCode() + (width * IDENTITY_MULTIPLIER) + (height * IDENTITY_MULTIPLIER) + config.hashCode();
+    public static long calcPrimaryKey(String fileKey, int width, int height, Bitmap.Config config) {
+        return fileKey.hashCode() + (width * IDENTITY_MULTIPLIER) + (height * IDENTITY_MULTIPLIER) + config.hashCode();
     }
 
     /**
      * Create a cache entry to be persisted.
      *
-     * @param originalPath   The path to original file.
-     * @param cacheFile      The cache file.
-     * @param cachedWidth    The width of cached image.
-     * @param cachedHeight   The height of cached image.
-     * @param cachedConfig   The bitmap config of cached image.
-     * @param cachedByteSize The byte size of the cached image.
+     * @param fileKey  The source file key.
+     * @param file     The cache file.
+     * @param width    The width of cached image.
+     * @param height   The height of cached image.
+     * @param config   The bitmap config of cached image.
+     * @param byteSize The byte size of the cached image.
      */
-    public CacheEntry(String originalPath, File cacheFile, int cachedWidth, int cachedHeight, Bitmap.Config cachedConfig, int cachedByteSize) {
-        mSourceFilePath = originalPath;
-        mFile = cacheFile;
-        mWidth = cachedWidth;
-        mHeight = cachedHeight;
-        mConfig = cachedConfig;
-        mByteSize = cachedByteSize;
-        mIdentity = calcIdentity(originalPath, cachedWidth, cachedHeight, cachedConfig);
-        mIsLandscape = mWidth >= mHeight;
+    public CacheEntry(String fileKey, File file, int width, int height, Bitmap.Config config, int byteSize) {
+        mFileKey = fileKey;
+        mPrimaryKey = calcPrimaryKey(fileKey, width, height, config);
+        mFile = file;
+        mWidth = width;
+        mHeight = height;
+        mConfig = config;
+        mByteSize = byteSize;
     }
 
     /**
-     * The original image path.
+     * Get the primary key.
      *
-     * @return The path to the original image file.
+     * @return The primary key.
      */
-    public String getOriginalFilePath() {
-        return mSourceFilePath;
+    public long getPrimaryKey() {
+        return mPrimaryKey;
     }
 
     /**
-     * Get a file representing the cache file.
+     * The source file key.
+     *
+     * @return The source file key.
+     */
+    public String getFileKey() {
+        return mFileKey;
+    }
+
+    /**
+     * Get cache file.
      *
      * @return The cache file.
      */
-    public File getCacheFile() {
+    public File getFile() {
         return mFile;
     }
 
@@ -107,26 +117,8 @@ public class CacheEntry {
         return mByteSize;
     }
 
-    /**
-     * Get the identity if this cached entry.
-     *
-     * @return The identity for this cache entry.
-     */
-    public long getIdentity() {
-        return mIdentity;
-    }
-
-    /**
-     * Get if the cached dimensions are landscape. Equal width and height return true as well.
-     *
-     * @return True if so.
-     */
-    public boolean isLandscape() {
-        return mIsLandscape;
-    }
-
     @Override
     public String toString() {
-        return mSourceFilePath + " w = " + getWidth() + " h = " + getHeight() + " config = " + getConfig();
+        return "file key " + mFileKey + " variant key = " + mPrimaryKey + " w = " + getWidth() + " h = " + getHeight() + " config = " + getConfig();
     }
 }

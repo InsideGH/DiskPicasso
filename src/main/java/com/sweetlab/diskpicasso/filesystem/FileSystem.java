@@ -38,9 +38,16 @@ public class FileSystem {
      * @return Journal entry of the result or null if fail.
      */
     public File write(WriteRequest req) throws IOException {
-        String path = req.getPath();
-        Bitmap bitmap = req.getBitmap();
-        return createImageFile(path, bitmap, mCompressFormat, mQuality);
+        final Bitmap bitmap = req.getBitmap();
+        final String fileKey = req.getFileKey();
+
+        final int width = bitmap.getWidth();
+        final int height = bitmap.getHeight();
+        final Bitmap.Config config = bitmap.getConfig();
+
+        final long primaryKey = CacheEntry.calcPrimaryKey(fileKey, width, height, config);
+
+        return writeFile(createFile(fileKey + primaryKey), bitmap, mCompressFormat, mQuality);
     }
 
     /**
@@ -50,37 +57,19 @@ public class FileSystem {
      * @return True if success.
      */
     public boolean remove(CacheEntry entry) {
-        File file = entry.getCacheFile();
+        File file = entry.getFile();
         return file.delete();
-    }
-
-    /**
-     * Create a new file. The file naming will include unique identity.
-     *
-     * @param filePath Original image path.
-     * @param src      Bitmap to compress and write.
-     * @param format   Bitmap compress format.
-     * @param quality  Bitmap compress quality.
-     * @return The image file containing compressed bitmap.
-     */
-    private File createImageFile(String filePath, Bitmap src, Bitmap.CompressFormat format,
-                                 int quality) throws IOException {
-        long identity = CacheEntry
-                .calcIdentity(filePath, src.getWidth(), src.getHeight(), src.getConfig());
-        File file = createFile(filePath + identity);
-        writeFile(file, src, format, quality);
-        return file;
     }
 
     /**
      * Create file. Any directory tree structure will be created if needed. Exception is thrown
      * if fail.
      *
-     * @param filePath Path including any directories.
+     * @param name Name including directories.
      * @return The file.
      */
-    private File createFile(String filePath) throws IOException {
-        File file = new File(mCacheRootPath + filePath);
+    private File createFile(String name) throws IOException {
+        File file = new File(mCacheRootPath + name);
         File dir = file.getParentFile();
         if (!dir.exists()) {
             dir.mkdirs();
@@ -98,8 +87,9 @@ public class FileSystem {
      * @param src     The bitmap.
      * @param format  Bitmap compress format.
      * @param quality Bitmap compress quality.
+     * @return File that was written.
      */
-    private void writeFile(File file, Bitmap src, Bitmap.CompressFormat format,
+    private File writeFile(File file, Bitmap src, Bitmap.CompressFormat format,
                            int quality) throws IOException {
         BufferedOutputStream stream = null;
         try {
@@ -110,5 +100,6 @@ public class FileSystem {
                 stream.close();
             }
         }
+        return file;
     }
 }

@@ -41,24 +41,24 @@ public class SizeValidator {
 //            Log.d("Peter100", "SizeValidator.isMatch failed, both resizeX and resizeY is zero");
             return false;
         }
-        if (resizeX != 0 && resizeY != 0) {
-            if ((resizeX >= resizeY) != entry.isLandscape()) {
+//        if (resizeX != 0 && resizeY != 0) {
+//            if ((resizeX >= resizeY) != entry.isLandscape()) {
 //                Log.d("Peter100", "SizeValidator.isMatch failed on orientation " + resizeX + " " + resizeY + " " + entry.isLandscape());
-                return false;
-            }
-        }
-        if (!entry.getConfig().equals(config)) {
+//                return false;
+//            }
+//        }
+        if (entry.getConfig() != config) {
 //            Log.d("Peter100", "SizeValidator.isMatch failed on config " + entry.getConfig() + " " + config);
             return false;
         }
         if (resizeX != 0) {
-            if (!(resizeX == width || resizeX == height)) {
+            if (!(Math.abs(resizeX - width) < 10 || Math.abs(resizeX- height) < 10)) {
 //                Log.d("Peter100", "SizeValidator.isMatch failed on resizeX " + resizeX + " width = " + width + " height = " + height);
                 return false;
             }
         }
         if (resizeY != 0) {
-            if (!(resizeY == width || resizeY == height)) {
+            if (!(Math.abs(resizeY - width) < 10 || Math.abs(resizeY- height) < 10)) {
 //                Log.d("Peter100", "SizeValidator.isMatch failed on resizeY " + resizeY + " width = " + width + " height = " + height);
                 return false;
             }

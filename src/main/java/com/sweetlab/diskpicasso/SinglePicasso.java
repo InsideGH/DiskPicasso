@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.squareup.picasso.LruCache;
 import com.squareup.picasso.Picasso;
+import com.sweetlab.diskpicasso.executor.CacheExecutor;
 
 /**
  * Picasso as a singleton. Needs to be initialized.
@@ -24,6 +25,10 @@ public class SinglePicasso {
         if (sPicassoInstance == null) {
             Picasso.Builder builder = new Picasso.Builder(context);
             builder.memoryCache(new LruCache(memoryCacheSizeBytes));
+
+            CacheExecutor executor = new CacheExecutor.Builder().setCore(1).setMax(2).build();
+            builder.executor(executor);
+
             sPicassoInstance = builder.build();
             sPicassoInstance.setIndicatorsEnabled(indicatorEnabled);
             sPicassoInstance.setLoggingEnabled(loggingEnabled);

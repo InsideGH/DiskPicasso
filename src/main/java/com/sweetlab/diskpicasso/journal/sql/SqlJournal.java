@@ -88,17 +88,17 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
 
     @Override
     public void insert(CacheEntry entry) {
-        if (!exists(entry.getIdentity())) {
+        if (!exists(entry.getPrimaryKey())) {
             SQLiteDatabase db = getWritableDatabase();
             db.beginTransaction();
 
             try {
                 ContentValues values = new ContentValues();
-                values.put(SqlJournalContract.EntryTable.COLUMN_NAME_IDENTITY, entry.getIdentity());
+                values.put(SqlJournalContract.EntryTable.COLUMN_NAME_IDENTITY, entry.getPrimaryKey());
                 values.put(SqlJournalContract.EntryTable.COLUMN_NAME_FILE_ABS_PATH,
-                        entry.getOriginalFilePath());
+                        entry.getFileKey());
                 values.put(SqlJournalContract.EntryTable.COLUMN_NAME_CACHE_FILE_ABS_PATH,
-                        entry.getCacheFile().getAbsolutePath());
+                        entry.getFile().getAbsolutePath());
                 values.put(SqlJournalContract.EntryTable.COLUMN_NAME_BITMAP_WIDTH, entry.getWidth());
                 values.put(SqlJournalContract.EntryTable.COLUMN_NAME_BITMAP_HEIGHT,
                         entry.getHeight());
@@ -122,7 +122,7 @@ public class SqlJournal extends SQLiteOpenHelper implements Journal {
     public void remove(CacheEntry entry) {
         SQLiteDatabase db = getWritableDatabase();
         String where = SqlJournalContract.EntryTable.COLUMN_NAME_IDENTITY + EQ + entry
-                .getIdentity();
+                .getPrimaryKey();
         db.beginTransaction();
         try {
             db.delete(SqlJournalContract.EntryTable.TABLE_NAME, where, null);

@@ -2,17 +2,26 @@ package com.sweetlab.diskpicasso.filesystem;
 
 import android.graphics.Bitmap;
 
+/**
+ * A write request.
+ */
 public class WriteRequest {
-    private final String mFilePath;
+    private final String mFileKey;
     private final Bitmap mBitmap;
 
-    public WriteRequest(String filePath, Bitmap bitmap) {
-        mFilePath = filePath;
+    /**
+     * Constructor.
+     *
+     * @param fileKey Unique source file key.
+     * @param bitmap  Bitmap to compress and write.
+     */
+    public WriteRequest(String fileKey, Bitmap bitmap) {
+        mFileKey = fileKey;
         mBitmap = bitmap;
     }
 
-    public String getPath() {
-        return mFilePath;
+    public String getFileKey() {
+        return mFileKey;
     }
 
     public Bitmap getBitmap() {

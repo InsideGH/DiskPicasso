@@ -2,7 +2,6 @@ package com.sweetlab.diskpicasso.storage;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import com.sweetlab.diskpicasso.CacheEntry;
 import com.sweetlab.diskpicasso.filesystem.FileSystem;
@@ -28,7 +27,7 @@ public class DiskCache {
     private final Object mStorageGuard = new Object();
     private final FileSystem mFileSystem;
     private final Journal mJournal;
-    private final CacheEntryCache mCacheEntryCache;
+    private final MemoryCache mMemoryCache;
 
     /**
      * Builder to build a uninitialized cache.
@@ -103,23 +102,24 @@ public class DiskCache {
     private DiskCache(Context context, int diskCacheBytes, Journal journal, int compressQuality) {
         mFileSystem = new FileSystem(context, compressQuality, COMPRESS_FORMAT);
         mJournal = journal;
-        mCacheEntryCache = new CacheEntryCache(diskCacheBytes, new MemoryCacheListener());
+        mMemoryCache = new MemoryCache(diskCacheBytes, new MemoryCacheListener());
     }
 
     /**
      * Put a bitmap into the disk cache. Asynchronous call.
      *
-     * @param filePath The path to the original image.
-     * @param bitmap   Bitmap to writeStorage/compress to disk cache.
+     * @param fileKey The source file key.
+     * @param bitmap  Bitmap to writeStorage/compress to disk cache.
      */
-    public void put(final String filePath, Bitmap bitmap) {
-        if (null == getExact(filePath, bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig())) {
-            Observable<CacheEntry> observable = writeStorage(new WriteRequest(filePath, bitmap)).subscribeOn(Schedulers.io());
+    public void put(final String fileKey, Bitmap bitmap) {
+        if (null == getExact(fileKey, bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig())) {
+            Observable<CacheEntry> observable = writeStorage(new WriteRequest(fileKey, bitmap)).subscribeOn(Schedulers.io());
 
             observable.subscribe(new Action1<CacheEntry>() {
                 @Override
                 public void call(CacheEntry entry) {
-                    mCacheEntryCache.put(entry);
+//                    Log.d("Peter100", "DiskCache.call put " + entry);
+                    mMemoryCache.put(entry);
                 }
             });
         }
@@ -128,25 +128,24 @@ public class DiskCache {
     /**
      * Get cached image from cache. Synchronous call.
      *
-     * @param originalPath The path to the original image.
-     * @param cachedWidth  The width of the cached image.
-     * @param cachedHeight The height of the cached image.
-     * @param cachedConfig The bitmap config of the cached image.
+     * @param fileKey The source file key.
+     * @param width   The width of the cached image.
+     * @param height  The height of the cached image.
+     * @param config  The bitmap config of the cached image.
      * @return A file referencing the cached image or null if no match.
      */
-    public File getExact(String originalPath, int cachedWidth, int cachedHeight,
-                         Bitmap.Config cachedConfig) {
-        return mCacheEntryCache.getExact(originalPath, cachedWidth, cachedHeight, cachedConfig);
+    public File getExact(String fileKey, int width, int height, Bitmap.Config config) {
+        return mMemoryCache.getExact(fileKey, width, height, config);
     }
 
     /**
-     * Get a list of cache entries for the given source path.
+     * Get a list of cache entries for the given source file key.
      *
-     * @param originalPath The source path.
+     * @param fileKey The source file key.
      * @return A unmodifiable list of entries.
      */
-    public List<CacheEntry> get(String originalPath) {
-        return mCacheEntryCache.get(originalPath);
+    public List<CacheEntry> get(String fileKey) {
+        return mMemoryCache.get(fileKey);
     }
 
     /**
@@ -158,11 +157,7 @@ public class DiskCache {
             entries = mJournal.retrieveAll();
         }
         if (entries != null) {
-            Log.d("Peter100", "DiskCache.init");
-            for (CacheEntry e : entries) {
-                Log.d("Peter100", "DiskCache.init " + e);
-            }
-            mCacheEntryCache.init(entries);
+            mMemoryCache.init(entries);
         }
     }
 
@@ -179,8 +174,8 @@ public class DiskCache {
                 try {
                     CacheEntry entry;
                     synchronized (mStorageGuard) {
-                        File cacheFile = mFileSystem.write(req);
-                        entry = createCacheEntry(req, cacheFile);
+                        File file = mFileSystem.write(req);
+                        entry = createEntry(req, file);
                         mJournal.insert(entry);
                     }
                     subscriber.onNext(entry);
@@ -198,11 +193,14 @@ public class DiskCache {
      * @param cacheFile The cache file to create.
      * @return The cache entry created.
      */
-    private CacheEntry createCacheEntry(WriteRequest req, File cacheFile) {
-        Bitmap bitmap = req.getBitmap();
-        String path = req.getPath();
-        return new CacheEntry(path, cacheFile, bitmap.getWidth(), bitmap.getHeight(),
-                bitmap.getConfig(), (int) cacheFile.length());
+    private CacheEntry createEntry(WriteRequest req, File cacheFile) {
+        final Bitmap bitmap = req.getBitmap();
+        final String fileKey = req.getFileKey();
+        final int width = bitmap.getWidth();
+        final int height = bitmap.getHeight();
+        final Bitmap.Config config = bitmap.getConfig();
+        final int byteSize = (int) cacheFile.length();
+        return new CacheEntry(fileKey, cacheFile, width, height, config, byteSize);
     }
 
     /**
@@ -215,10 +213,10 @@ public class DiskCache {
                 @Override
                 public void call() {
                     synchronized (mStorageGuard) {
+                        mMemoryCache.remove(entry);
                         mFileSystem.remove(entry);
                         mJournal.remove(entry);
                     }
-                    mCacheEntryCache.remove(entry);
                 }
             });
         }
