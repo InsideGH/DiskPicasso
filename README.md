@@ -1,6 +1,7 @@
 # DiskPicasso
 
-This is a local diskcache built upon Picasso library.
+This is a local diskcache based on/using the [Picasso library](https://github.com/square/picasso).
+
 Cached images files are stored into Android application
 data folder. A journal of cache entries are stored
 in either a sql or realm based journal implementation.
